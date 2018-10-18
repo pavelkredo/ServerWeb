@@ -8,41 +8,40 @@ namespace Страны_JSON
 {
     internal class MainClass
     {
-        private const string pathJsonFile = "americas.json";
+        private const string pathJsonFile = "../../americas.json";
 
         private static void Main()
         {
-            // Создаем поток для чтения файла и считываем файл в одну строку
-            var streamReader = new StreamReader(pathJsonFile);
-            var json = streamReader.ReadToEnd();
+            // создаем переменную строки для JSON'а
+            string json;
 
-            // Десереализуем JSON, используя класс Country
-            var countries = JsonConvert.DeserializeObject<List<Country>>(json);
-
-            // Вычисляем через LINQ-выражение сумму численностей населения всех стран
-            var totalPopulationCount = countries.Select(country => country.Population).Sum();
-            Console.WriteLine("Суммарная численность населения по странам: " + totalPopulationCount);
-
-            // Создаем список имен валют
-            var currenciesName = new List<string>();
-
-            // Проходим по странам и валютам, ими используемыми
-            foreach (var country in countries)
+            // создаем поток для чтения файла и считываем файл в одну строку
+            using (var streamReader = new StreamReader(pathJsonFile))
             {
-                foreach (var currency in country.Currencies)
-                {
-                    // Если в списке имен валют нет валют данной страны, то добавляем
-                    if (!currenciesName.Contains(currency.Name))
-                    {
-                        currenciesName.Add(currency.Name);
-                    }
-                }
+                json = streamReader.ReadToEnd();
             }
 
+            // десереализуем JSON, используя класс Country
+            var countries = JsonConvert.DeserializeObject<List<Country>>(json);
+
+            // вычисляем через LINQ-выражение сумму численностей населения всех стран
+            var totalPopulationCount = countries.Sum(country => country.Population);
+            Console.WriteLine("Суммарная численность населения по странам: " + totalPopulationCount);
+            Console.WriteLine();
+
+            // выберем неповторяющиеся наименования используемых валют из списка стран,
+            // сразу проверяя на отсутствие наименования у валюты (null)
+            var currencies = countries
+                .SelectMany(country => country.Currencies)
+                .Select(currency => currency.Name)
+                .Where(name => name != null)
+                .Distinct();
+
             // Выводим список валют в консоль
-            foreach (var currencyName in currenciesName)
+            Console.WriteLine("Список валют:");
+            foreach (var currency in currencies)
             {
-                Console.WriteLine(currencyName);
+                Console.WriteLine(currency);
             }
         }
     }
